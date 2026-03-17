@@ -4,13 +4,13 @@ A [Claude Code skill](https://docs.anthropic.com/en/docs/claude-code/skills) for
 
 ## Prerequisites
 
-- [tldraw desktop](https://github.com/tldraw/tldraw-desktop/releases/latest) installed and running
+- [tldraw desktop](https://github.com/tldraw/tldraw-desktop) installed and running — [Download latest release](https://github.com/tldraw/tldraw-desktop/releases/latest)
 - The app exposes a local Canvas API on `http://localhost:7236`
 
 ## Install
 
 ```bash
-npx skills add jsh-me/tldraw-desktop-skill --yes --global
+npx skills add tmdgusya/tldraw-desktop-skill --yes --global
 ```
 
 ## What it does
