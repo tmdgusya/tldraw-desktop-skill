@@ -7,16 +7,42 @@ description: Use when the user asks to draw diagrams, create visuals, sketch wir
 
 Programmatically create and modify diagrams on the tldraw desktop app via its local HTTP API at `http://localhost:7236`.
 
+**IMPORTANT:** Always use `curl` for all API calls. Do NOT use fetch, wget, or any other HTTP client.
+
 ## Workflow
 
 ```
-1. GET  /api/doc                     → list open docs (get DOC_ID)
-2. GET  /api/doc/{id}/shapes         → read current shapes
-3. POST /api/doc/{id}/actions        → create/modify shapes
-4. GET  /api/doc/{id}/screenshot     → verify result visually
+1. curl -s http://localhost:7236/api/doc                          → list open docs (get DOC_ID)
+2. curl -s http://localhost:7236/api/doc/{id}/shapes              → read current shapes
+3. curl -s -X POST http://localhost:7236/api/doc/{id}/actions     → create/modify shapes
+4. curl -s http://localhost:7236/api/doc/{id}/screenshot -o f.jpg → verify result visually
 ```
 
 Always verify your work with a screenshot after making changes. Prefer small, incremental batches.
+
+## Overlap Check — MANDATORY after every batch of changes
+
+After creating or modifying shapes, you MUST:
+
+1. Take a screenshot and visually inspect for overlapping shapes, crossing arrows, or crowded text
+2. If overlaps or readability issues are found, fix them using `place`, `move`, `stack`, `align`, or `distribute`
+3. Take another screenshot to confirm the fix
+
+```dot
+digraph overlap_check {
+    "Make changes" -> "Screenshot";
+    "Screenshot" -> "Overlaps or crowding?" [label="inspect"];
+    "Overlaps or crowding?" -> "Fix layout" [label="yes"];
+    "Fix layout" -> "Screenshot";
+    "Overlaps or crowding?" -> "Done" [label="no, clean"];
+}
+```
+
+**Common overlap fixes:**
+- Shapes stacked on top of each other → use `stack` with `gap: 80` or `place` with `sideOffset: 80`
+- Arrows crossing through unrelated shapes → `move` the blocking shape out of the path, or use `kind: "elbow"` for right-angle routing
+- Text labels overlapping → make shapes wider (`resize` or `update` with larger `w`) or increase gap between shapes
+- Dense diagrams → split into rows/columns using `stack` + `align`, or increase spacing with `distribute`
 
 ## Quick Reference
 
@@ -72,6 +98,7 @@ POST to `/api/doc/:id/actions` with `{"actions": [...]}`. All actions in one req
 
 ## Best Practices
 
+- **Always use `curl`** for all HTTP calls — no exceptions
 - **Default shape size:** ~300x200 with ~200 gap between shapes
 - **Connect shapes with arrows:** use `fromId`/`toId` — arrows stay attached when shapes move
 - **Prefer high-level actions** (`place`, `stack`, `align`) over manual coordinate math
@@ -79,8 +106,9 @@ POST to `/api/doc/:id/actions` with `{"actions": [...]}`. All actions in one req
 - **Use `place`** to position shapes relative to each other instead of calculating coordinates
 - **Default styles:** black, medium, draw style, centered text, no fill — unless there's a reason to change
 - **Fill recommendations:** `none` for outlines, `solid` for tinted backgrounds
-- **Screenshot after changes** to verify layout visually
+- **Screenshot after changes** to verify layout and check for overlaps
 - **Assign readable shapeIds** (e.g., `"auth-box"`, `"db-node"`) for easier reference
+- **Large diagrams (7+ shapes):** build in stages — create a few shapes, screenshot, adjust layout, then add more
 
 ## Example: Creating a Flowchart
 
@@ -101,8 +129,9 @@ curl -s -X POST "$BASE/actions" \
     ]
   }'
 
-# Verify
+# MANDATORY: Screenshot to check for overlaps
 curl -s "$BASE/screenshot?size=medium" -o screenshot.jpg
+# Inspect the screenshot — if shapes overlap or arrows cross, fix with place/move/stack
 ```
 
 ## Exec API
@@ -115,4 +144,4 @@ curl -s -X POST "$BASE/exec" \
   -d '{"code": "return editor.getCurrentPageShapeIds().size"}'
 ```
 
-Full SDK docs available at: `GET http://localhost:7236/api/llms`
+Full SDK docs available at: `curl -s http://localhost:7236/api/llms`
